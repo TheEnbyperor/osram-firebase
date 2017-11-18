@@ -1,0 +1,81 @@
+{
+  "rules": {
+    "locations": {
+      "$user_id": {
+        ".write": "$user_id === auth.uid",
+        ".read": "$user_id === auth.uid || auth.provider === 'password'",
+        ".validate": "newData.hasChildren(['timestamp', 'coords'])",
+        "coords": {
+          ".validate": "newData.hasChildren(['lat', 'lng'])",
+          "lat": {
+            ".validate": "newData.isNumber()"
+          },
+          "lng": {
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    },
+    "menu": {
+      ".read": "auth != null",
+      "$stall": {
+        ".write": "root.child('stalls/'+$stall+'/owner').val() === auth.uid",
+        ".validate": "root.child('stalls/'+$stall).exists()"
+      }
+    },
+    "messagingIds": {
+      "$user_id": {
+        ".write": "$user_id === auth.uid",
+        ".validate": "newData.isString()"
+      }
+    },
+    "pendingOrders": {
+      ".read": "auth.provider === 'password'",
+      ".indexOn": ["stall"],
+      "$order_id": {
+        ".write": "(newData.child('uid').val() === auth.uid) || (!newData.exists() && root.child('stalls/'+data.child('stall').val()+'/owner').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['uid', 'stall', 'cart'])",
+        "stall": {
+          ".validate": "root.child('stalls/'+newData.val()).exists()"
+        },
+        "cart": {
+          "$item_id": {
+            ".validate": "root.child('menu/'+newData.parent().parent().child('stall').val()).hasChild($item_id) && newData.isNumber()"
+          }
+      	},
+        ".read": "root.child('stalls/'+data.child('stall').val()+'/owner').val() === auth.uid"
+      }
+    },
+    "inProgressOrders": {
+      ".read": "auth.provider === 'password'",
+      ".indexOn": ["stall"],
+      "$order_id": {
+        ".write": "(!newData.exists() && root.child('stalls/'+data.child('stall').val()+'/owner').val() === auth.uid) || (root.child('stalls/'+newData.child('stall').val()+'/owner').val() === auth.uid)",
+        ".read": "root.child('stalls/'+data.child('stall').val()+'/owner').val() === auth.uid"
+      }
+    },
+    "finishedOrders": {
+      ".read": "auth.provider === 'password'",
+      ".indexOn": ["stall"],
+      "$order_id": {
+        ".write": "root.child('stalls/'+newData.child('stall').val()+'/owner').val() === auth.uid",
+        ".read": "auth.provider === 'password'"
+      }
+    },
+    "rejectedOrders": {
+      ".indexOn": ["stall"],
+      "$order_id": {
+        ".read": "data.child('uid').val() === auth.uid",
+        ".write": "root.child('stalls/'+newData.child('stall').val()+'/owner').val() === auth.uid"
+      }
+    },
+    "stalls": {
+      ".read": "auth != null",
+      ".indexOn": ["owner"],
+      "$stall": {
+        ".validate": "newData.hasChildren(['name', 'headerImg'])",
+        ".write": "data.child('owner').val() === auth.uid"
+      }
+    }
+  }
+}
